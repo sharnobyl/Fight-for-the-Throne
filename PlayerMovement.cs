@@ -1,15 +1,48 @@
 ﻿using UnityEngine;
+using System.Collections;
 
 public class PlayerMovement : MonoBehaviour
 {
-    private bool isGrounded = true;
+
+    [SerializeField]
+    LayerMask lmWalls;
+    [SerializeField]
+    float fJumpVelocity = 5;
+
+    float fJumpPressedRemember = 0;
+    [SerializeField]
+    float fJumpPressedRememberTime = 0.2f;
+
+    float fGroundedRemember = 0;
+    [SerializeField]
+    float fGroundedRememberTime = 0.25f;
+
+    [SerializeField]
+    float fHorizontalAcceleration = 1;
+    [SerializeField]
+    [Range(0, 1)]
+    float fHorizontalDampingBasic = 0.5f;
+    [SerializeField]
+    [Range(0, 1)]
+    float fHorizontalDampingWhenStopping = 0.5f;
+    [SerializeField]
+    [Range(0, 1)]
+    float fHorizontalDampingWhenTurning = 0.5f;
+
+    [SerializeField]
+    [Range(0, 1)]
+    float fCutJumpHeight = 0.5f;
+
     public bool facingRight = true;
-    public int jumpCounter = 0;
     public int playerSpeed = 10;
-    public int jumpPower = 1200;
     private float moveHor;
-    public Rigidbody2D rb;
+    Rigidbody2D rb;
     public Animator anim;
+
+    void Start()
+    {
+        rb = GetComponent<Rigidbody2D>();
+    }
 
     // Update is called once per frame
     void FixedUpdate()
@@ -24,9 +57,9 @@ public class PlayerMovement : MonoBehaviour
 
         moveHor = Input.GetAxis("Horizontal");
 
-        if (Input.GetButtonDown("Jump") && isGrounded) {
-            Jump();
-        }
+        
+        Jump();
+        
         
         // Animation
         if (moveHor != 0) {
@@ -43,21 +76,47 @@ public class PlayerMovement : MonoBehaviour
         }
         // Player Direction
         // Physics
-        rb.velocity = new Vector2(moveHor * playerSpeed, rb.velocity.y);
+        float fHorizontalVelocity = rb.velocity.x;
+        fHorizontalVelocity += Input.GetAxisRaw("Horizontal");
+
+        if (Mathf.Abs(Input.GetAxisRaw("Horizontal")) < 0.01f)
+            fHorizontalVelocity *= Mathf.Pow(1f - fHorizontalDampingWhenStopping, Time.deltaTime * 10f);
+        else if (Mathf.Sign(Input.GetAxisRaw("Horizontal")) != Mathf.Sign(fHorizontalVelocity))
+            fHorizontalVelocity *= Mathf.Pow(1f - fHorizontalDampingWhenTurning, Time.deltaTime * 10f);
+        else
+            fHorizontalVelocity *= Mathf.Pow(1f - fHorizontalDampingBasic, Time.deltaTime * 10f);
+
+        rb.velocity = new Vector2(fHorizontalVelocity, rb.velocity.y);
     }
     void Jump()
     {
-        jumpCounter++;
-        isGrounded = false;
-        rb.AddForce(Vector2.up * jumpPower, ForceMode2D.Force);
-    }
-   
-    void OnCollisionEnter2D(Collision2D collision)
-    {
-        if (collision.collider.tag == "Ground"){
-            isGrounded = true;
+        Vector2 v2GroundedBoxCheckPosition = (Vector2)transform.position + new Vector2(0, -0.01f);
+        Vector2 v2GroundedBoxCheckScale = (Vector2)transform.localScale + new Vector2(-0.02f, 0);
+        bool bGrounded = Physics2D.OverlapBox(v2GroundedBoxCheckPosition, v2GroundedBoxCheckScale, 0, lmWalls);
+
+        fGroundedRemember -= Time.deltaTime;
+        if (bGrounded) {
+            fGroundedRemember = fGroundedRememberTime;
+        }
+
+        fJumpPressedRemember -= Time.deltaTime;
+        if (Input.GetButtonDown("Jump")) {
+            fJumpPressedRemember = fJumpPressedRememberTime;
+        }
+
+        if (Input.GetButtonUp("Jump")) {
+            if (rb.velocity.y > 0) {
+                rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y * fCutJumpHeight);
+            }
+        }
+
+        if ((fJumpPressedRemember > 0) && (fGroundedRemember > 0)) {
+            fJumpPressedRemember = 0;
+            fGroundedRemember = 0;
+            rb.velocity = new Vector2(rb.velocity.x, fJumpVelocity);
         }
     }
+   
     void FlipPlayer()
     {
         facingRight = !facingRight;
@@ -65,4 +124,20 @@ public class PlayerMovement : MonoBehaviour
         localScale.x *= -1;
         transform.localScale = localScale;
     }
+    public IEnumerator Knockback(float knockDur, float knockbackPwr, Vector3 knockbackDir)
+    {
+
+        float timer = 0;
+
+        while (knockDur > timer) {
+
+            timer += Time.deltaTime;
+
+            rb.AddForce(new Vector3(knockbackDir.x * -100, knockbackDir.y * knockbackPwr, transform.position.z));
+
+        }
+
+        yield return 0;
+
+     }
 }
