@@ -25,18 +25,19 @@ public class PlayerHealth : MonoBehaviour
         if (currentHealth < 0) {
             Die();
         }
-        if (Input.GetKeyDown(KeyCode.Y)) {
-            TakeDamage(20);
+        if (currentHealth > maxHealth) {
+            currentHealth = maxHealth;
         }
+
     }
     void Die()
     { 
-        SceneManager.LoadScene("SampleScene");
+        SceneManager.LoadScene("DeadScreen");
     }
     public void TakeDamage(int damage)
     {
+        FindObjectOfType<AudioManager>().Play("Player Damage");
         currentHealth -= damage;
-
         healthBar.SetHealth(currentHealth);
     }
 }

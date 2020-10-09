@@ -4,8 +4,8 @@ using System.Collections;
 public class PlayerMovement : MonoBehaviour
 {
 
-    [SerializeField]
-    LayerMask lmWalls;
+    //[SerializeField]
+    //LayerMask lmWalls;
     [SerializeField]
     float fJumpVelocity = 5;
 
@@ -17,8 +17,8 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField]
     float fGroundedRememberTime = 0.25f;
 
-    [SerializeField]
-    float fHorizontalAcceleration = 1;
+    //[SerializeField]
+    //float fHorizontalAcceleration = 1;
     [SerializeField]
     [Range(0, 1)]
     float fHorizontalDampingBasic = 0.5f;
@@ -33,34 +33,46 @@ public class PlayerMovement : MonoBehaviour
     [Range(0, 1)]
     float fCutJumpHeight = 0.5f;
 
+    public float dashAmount = 10f;
     public bool facingRight = true;
-    public int playerSpeed = 10;
     private float moveHor;
+    public bool bGrounded;
+    private bool isPaused = false;
     Rigidbody2D rb;
-    public Animator anim;
+    Animator anim;
+    AudioSource audioSource;
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        anim = GetComponent<Animator>();
+        audioSource = GetComponent<AudioSource>();
+
     }
 
     // Update is called once per frame
-    void FixedUpdate()
+    void Update()
     {
         // Movement
         PlayerMove();
+        Jump();
+        Dash();
+        if (Input.GetKeyDown(KeyCode.Escape) && !isPaused) {
+            Time.timeScale = 0;
+            print("hey");
+            isPaused = true;
+        }
+        else if (Input.GetKeyDown(KeyCode.Escape) && isPaused) {
+            Time.timeScale = 1;
+            print("hea");
+            isPaused = false;
+        }
     }
-
     void PlayerMove()
     {
         // Controls
-
         moveHor = Input.GetAxis("Horizontal");
 
-        
-        Jump();
-        
-        
         // Animation
         if (moveHor != 0) {
             anim.SetBool("isRunning", true);
@@ -74,8 +86,16 @@ public class PlayerMovement : MonoBehaviour
         else if (moveHor > 0.0f && facingRight == false) {
             FlipPlayer();
         }
-        // Player Direction
-        // Physics
+        if (anim.GetBool("isRunning") == true && bGrounded){
+            if (!audioSource.isPlaying){
+                audioSource.Play();
+            }
+        }
+        else {
+            audioSource.Stop();
+        }
+
+        // Physics 
         float fHorizontalVelocity = rb.velocity.x;
         fHorizontalVelocity += Input.GetAxisRaw("Horizontal");
 
@@ -90,9 +110,9 @@ public class PlayerMovement : MonoBehaviour
     }
     void Jump()
     {
-        Vector2 v2GroundedBoxCheckPosition = (Vector2)transform.position + new Vector2(0, -0.01f);
-        Vector2 v2GroundedBoxCheckScale = (Vector2)transform.localScale + new Vector2(-0.02f, 0);
-        bool bGrounded = Physics2D.OverlapBox(v2GroundedBoxCheckPosition, v2GroundedBoxCheckScale, 0, lmWalls);
+        //Vector2 v2GroundedBoxCheckPosition = (Vector2)transform.position + new Vector2(0, -0.01f);
+        //Vector2 v2GroundedBoxCheckScale = (Vector2)transform.localScale + new Vector2(-0.02f, 0);
+        //bool bGrounded = Physics2D.OverlapBox(v2GroundedBoxCheckPosition, v2GroundedBoxCheckScale, 0, lmWalls);
 
         fGroundedRemember -= Time.deltaTime;
         if (bGrounded) {
@@ -114,6 +134,8 @@ public class PlayerMovement : MonoBehaviour
             fJumpPressedRemember = 0;
             fGroundedRemember = 0;
             rb.velocity = new Vector2(rb.velocity.x, fJumpVelocity);
+            bGrounded = false;
+            FindObjectOfType<AudioManager>().Play("Jump");
         }
     }
    
@@ -124,20 +146,22 @@ public class PlayerMovement : MonoBehaviour
         localScale.x *= -1;
         transform.localScale = localScale;
     }
-    public IEnumerator Knockback(float knockDur, float knockbackPwr, Vector3 knockbackDir)
+
+    void Dash()
     {
-
-        float timer = 0;
-
-        while (knockDur > timer) {
-
-            timer += Time.deltaTime;
-
-            rb.AddForce(new Vector3(knockbackDir.x * -100, knockbackDir.y * knockbackPwr, transform.position.z));
-
+        if (Input.GetKeyDown(KeyCode.Space)){
+            if (facingRight)
+                rb.MovePosition(transform.position + new Vector3(dashAmount, 0));
+            else
+                rb.MovePosition(transform.position - new Vector3(dashAmount, 0));
         }
+    }
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.collider.tag == "Ground" || collision.collider.tag == "Enemy") {
+            bGrounded = true;
+        }
+    }
 
-        yield return 0;
 
-     }
 }

@@ -11,6 +11,7 @@ public class PlayerCombat : MonoBehaviour
     public int attackDamage = 35;
     public float attackRate = 2f;
     float nextAttackTime = 0f;
+    static public int playerScore = 0;
 
     void Update()
     {
@@ -20,6 +21,9 @@ public class PlayerCombat : MonoBehaviour
                 nextAttackTime = Time.time + 1f / attackRate;
             }
         }
+        if (Input.GetKeyDown(KeyCode.Y)) {
+            Debug.Log(playerScore);
+            }
     }
     void Attack()
     {
@@ -28,6 +32,13 @@ public class PlayerCombat : MonoBehaviour
 
         // Enemy Detection
         Collider2D[] hitEnemies = Physics2D.OverlapCircleAll(attackPoint.position, attackRange, enemyLayers);
+
+        if (hitEnemies.Length > 0) {
+            FindObjectOfType<AudioManager>().Play("Sword Hit");
+        }
+        else {
+            FindObjectOfType<AudioManager>().Play("Sword Swing");
+        }
 
         // Damage
         foreach(Collider2D enemy in hitEnemies) {
@@ -39,5 +50,9 @@ public class PlayerCombat : MonoBehaviour
     private void OnDrawGizmosSelected()
     {
         Gizmos.DrawWireSphere(attackPoint.position, attackRange);
+    }
+    public void DamageAnim()
+    {
+        animator.SetTrigger("Damaged");
     }
 }
