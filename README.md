@@ -1,2 +1,2 @@
-# chess-platformer
-Scripts used in making the Achievement Standard
+# Wave-Fighting Game
+Scripts used in making a wave-based fight platformer in Unity
