@@ -497,16 +497,7 @@ After fixing this, I was satisfied with how the game turned out and believed it 
 
 To play the game on windows: [https://bit.ly/3jKTrPC](https://bit.ly/3jKTrPC)
 
-To view all the code: [https://github.com/sharnobyl/chess-platformer](https://github.com/sharnobyl/chess-platformer)
-
 To view all the project files: [https://bit.ly/36Mv5RP](https://bit.ly/36Mv5RP)
 
 To watch the testing videos: [https://bit.ly/34Cqpv6](https://bit.ly/34Cqpv6)
 
-## REPRESENTATIVE
-
-Sharjil Kazi
-
-Lynfield College
-
-19640
